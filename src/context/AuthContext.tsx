@@ -1,6 +1,6 @@
 /* eslint-disable react/only-export-components */
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { ADMIN_EMAIL, ADMIN_PASSWORD_HASH, ADMIN_USERNAME, DEMO_USER, DEMO_USER_ID, DEMO_PASSWORD_HASH, DEMO_USER_EMAIL, DEMO_USER_FULLNAME, DEMO_USER_USERNAME, hashPassword, verifyPassword } from "../config/credentials";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -48,6 +48,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
   signInAsAdmin: (emailOrUsername: string, password: string) => Promise<void>;
+  autoSignInAsAdmin: () => Promise<void>;
   signUp: (input: AuthSignupData) => Promise<void>;
   signOut: () => Promise<void>;
   adminSignOut: () => Promise<void>;
@@ -64,6 +65,7 @@ interface AuthContextType {
 // ─────────────────────────────────────────────────────────────────────────────
 const SESSION_KEY = import.meta.env.VITE_SESSION_KEY as string || "novaa_session";
 const ADMIN_SESSION_KEY = "novaa_admin_session";
+const ADMIN_AUTO_LOGIN_SUPPRESS_KEY = "novaa_admin_auto_login_suppressed";
 const USERS_KEY = "novaa_users";
 const DEMO_HASH_KEY = "novaa_demo_hash";
 const SESSION_TIMEOUT_MS = parseInt(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES || "1440") * 60 * 1000; // 24h default
@@ -352,6 +354,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const autoSignInAsAdmin = useCallback(async () => {
+    if (!import.meta.env.DEV || import.meta.env.VITE_ADMIN_AUTO_LOGIN !== "true" || !ADMIN_PASSWORD_HASH) {
+      throw new Error("Automatic admin login is disabled.");
+    }
+    setAdminLoading(true);
+    try {
+      lsRemove(ADMIN_AUTO_LOGIN_SUPPRESS_KEY);
+      const session: AdminSession = {
+        id: "admin_novaa",
+        email: ADMIN_EMAIL,
+        username: ADMIN_USERNAME,
+        role: "admin",
+        _ts: Date.now(),
+      };
+      lsSet(ADMIN_SESSION_KEY, JSON.stringify(session));
+      setAdminSession(session);
+    } finally {
+      setAdminLoading(false);
+    }
+  }, []);
+
   // ── Sign Up ───────────────────────────────────────────────────────────────
   const signUp = async ({ email, password, fullName, username, phone }: AuthSignupData) => {
     setLoading(true);
@@ -453,6 +476,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAdminLoading(true);
     try {
       lsRemove(ADMIN_SESSION_KEY);
+      if (import.meta.env.DEV && import.meta.env.VITE_ADMIN_AUTO_LOGIN === "true") {
+        lsSet(ADMIN_AUTO_LOGIN_SUPPRESS_KEY, "true");
+      }
       setAdminSession(null);
     } finally {
       setAdminLoading(false);
@@ -469,6 +495,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signInAsGuest,
         signInAsAdmin,
+        autoSignInAsAdmin,
         signUp,
         signOut,
         adminSignOut,

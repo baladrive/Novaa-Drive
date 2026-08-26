@@ -21,6 +21,7 @@ export default function NovaaDriveAuth() {
   const {
     signIn,
     signInAsGuest,
+    autoSignInAsAdmin,
     signUp,
     resetPassword,
     signInWithProvider,
@@ -159,6 +160,19 @@ export default function NovaaDriveAuth() {
       await signInAsGuest();
     } catch (err: any) {
       setError(err.message || "Unable to start guest mode.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminEntry = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await autoSignInAsAdmin();
+      navigate("/admin/dashboard", { replace: true });
+    } catch (err: any) {
+      setError(err.message || "Automatic admin login is unavailable.");
     } finally {
       setLoading(false);
     }
@@ -672,7 +686,8 @@ export default function NovaaDriveAuth() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => navigate("/admin/login")}
+                      onClick={handleAdminEntry}
+                      disabled={loading}
                       className="flex items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 py-3 text-xs font-bold text-amber-300 transition hover:border-amber-400/50 hover:bg-amber-400/10"
                     >
                       <Shield className="h-4 w-4" /> Admin Login

@@ -1,14 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { KeyRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { signInAsAdmin, adminLoading } = useAuth();
+  const { signInAsAdmin, autoSignInAsAdmin, adminLoading } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const autoLoginSuppressed = localStorage.getItem("novaa_admin_auto_login_suppressed") === "true";
+    if (autoLoginSuppressed) {
+      const clearSuppression = window.setTimeout(() => localStorage.removeItem("novaa_admin_auto_login_suppressed"), 1500);
+      return () => window.clearTimeout(clearSuppression);
+    }
+    if (import.meta.env.DEV && import.meta.env.VITE_ADMIN_AUTO_LOGIN === "true") {
+      autoSignInAsAdmin()
+        .then(() => navigate("/admin/dashboard", { replace: true }))
+        .catch(() => setError("Automatic admin login is unavailable."));
+    }
+  }, [autoSignInAsAdmin, navigate]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
