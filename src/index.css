@@ -1,0 +1,520 @@
+@import "tailwindcss";
+
+/* ── Core Performance Optimizations ─────────────────────────────────── */
+*, *::before, *::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* GPU Acceleration for animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  will-change: transform, opacity;
+}
+
+/* Contain layout for better paint performance */
+.isolate {
+  contain: layout style;
+}
+
+@layer utilities {
+  /* Slow spin animation for our header brand logo */
+  .animate-spin-slow {
+    animation: spin-slow 12s linear infinite;
+    will-change: transform;
+  }
+  
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* AI Orb float up-down - use transform only for GPU acceleration */
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* AI Orb outer ring orbit */
+  .animate-orbit {
+    animation: orbit 6s linear infinite;
+    will-change: transform;
+  }
+  @keyframes orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Reverse orbit for secondary ring */
+  .animate-orbit-reverse {
+    animation: orbit-reverse 9s linear infinite;
+    will-change: transform;
+  }
+  @keyframes orbit-reverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+
+  /* Subtle glow pulse for AI badge */
+  .animate-glow {
+    animation: glow-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.6), 0 0 80px rgba(245, 158, 11, 0.2); }
+  }
+
+  /* Token scanning line */
+  .animate-scan {
+    animation: scan 2.5s linear infinite;
+  }
+  @keyframes scan {
+    0% { transform: translateY(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(400%); opacity: 0; }
+  }
+
+  /* Fade in upward - transform + opacity only for GPU acceleration */
+  .animate-fade-up {
+    animation: fade-up 0.6s ease-out both;
+    will-change: transform, opacity;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Premium Animations ──────────────────────────────────────────────── */
+
+  /* Scale pulse for buttons */
+  .animate-scale-pulse {
+    animation: scale-pulse 2s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes scale-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  /* Shimmer loading effect */
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+    will-change: background-position;
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Slide in from left */
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out both;
+    will-change: transform, opacity;
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Slide in from right */
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out both;
+    will-change: transform, opacity;
+  }
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Bounce in */
+  .animate-bounce-in {
+    animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) both;
+    will-change: transform, opacity;
+  }
+  @keyframes bounce-in {
+    0% { opacity: 0; transform: scale(0.3); }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Rotate in */
+  .animate-rotate-in {
+    animation: rotate-in 0.4s ease-out both;
+    will-change: transform, opacity;
+  }
+  @keyframes rotate-in {
+    from { opacity: 0; transform: rotate(-180deg) scale(0.3); }
+    to { opacity: 1; transform: rotate(0) scale(1); }
+  }
+
+  /* Flip */
+  .animate-flip {
+    animation: flip 0.6s ease-out both;
+    will-change: transform, opacity;
+  }
+  @keyframes flip {
+    from { transform: perspective(400px) rotateY(90deg); opacity: 0; }
+    to { transform: perspective(400px) rotateY(0); opacity: 1; }
+  }
+
+  /* Heartbeat */
+  .animate-heartbeat {
+    animation: heartbeat 1.5s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.3); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.3); }
+    70% { transform: scale(1); }
+  }
+
+  /* Wiggle for attention */
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out;
+    will-change: transform;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    75% { transform: rotate(-3deg); }
+  }
+
+  /* Gradient shift for animated backgrounds */
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+    will-change: background-position;
+  }
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Typing cursor */
+  .animate-typing {
+    animation: typing 3s steps(40) 1s forwards, blink-caret 0.75s step-end infinite;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid;
+  }
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+  @keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: #f59e0b; }
+  }
+
+  /* Confetti-like pop */
+  .animate-pop {
+    animation: pop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) both;
+    will-change: transform, opacity;
+  }
+  @keyframes pop {
+    0% { transform: scale(0); opacity: 0; }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Smooth fade */
+  .animate-fade {
+    animation: fade 0.3s ease-out both;
+    will-change: opacity;
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Scrollbar hide utility */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar adjustments for a clean photos grid scroll experience */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* Tailwind zinc-300 */
+    border-radius: 9999px;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb {
+    background: #4b5563; /* Tailwind zinc-600 */
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* Tailwind zinc-400 */
+  }
+}
+
+/* Reset baseline defaults */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Prevent layout shift */
+  overflow-x: hidden;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ── Novaa Drive Auth Page Premium Styles ───────────────────────────── */
+
+/* Smooth scrolling for the auth page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom selection color for auth pages */
+.auth-page ::selection {
+  background: rgba(124, 92, 255, 0.3);
+  color: white;
+}
+
+/* Glassmorphism base class */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #7C5CFF, #4CC9F0, #00E5FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated border gradient */
+.animated-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: conic-gradient(
+    from 0deg,
+    #7C5CFF,
+    #4CC9F0,
+    #00E5FF,
+    #7C5CFF
+  );
+  border-radius: inherit;
+  z-index: -1;
+  animation: border-spin 4s linear infinite;
+  will-change: transform;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.animated-border:hover::before {
+  opacity: 1;
+}
+
+@keyframes border-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Aurora background effect */
+.aurora {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 92, 255, 0.05) 0%,
+    rgba(76, 201, 240, 0.03) 25%,
+    rgba(0, 229, 255, 0.05) 50%,
+    rgba(76, 201, 240, 0.03) 75%,
+    rgba(124, 92, 255, 0.05) 100%
+  );
+  background-size: 400% 400%;
+  animation: aurora-anim 15s ease infinite;
+}
+
+@keyframes aurora-anim {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Shimmer loading skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Focus ring for accessibility */
+input:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* Dark theme color scheme for inputs */
+input,
+textarea,
+select {
+  color-scheme: dark;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimize paint for fixed elements */
+.fixed {
+  -webkit-transform: translateZ(0);
+}
+
+/* ── Missing Animations ────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* GPU-accelerated animation classes */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth scroll for main content */
+main {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 120Hz Smooth Scrolling & Motion ──────────────────────────────────── */
+/* Targets high-refresh-rate displays (120Hz+) for buttery smooth motion */
+@media (update: fast) {
+  html, body, main {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Force high refresh rate rendering - applies to dashboard content */
+.dashboard-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  /* Encourage 120Hz rendering on supported displays */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, scroll-position;
+  /* Smoother scroll interpolation */
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+
+/* Optimize transitions for 120Hz displays */
+.dashboard-smooth * {
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* High-refresh-rate optimized animations (60fps baseline, smooth on 120Hz) */
+@media (min-resolution: 2dppx) {
+  .animate-float,
+  .animate-orbit,
+  .animate-orbit-reverse,
+  .animate-glow,
+  .animate-shimmer,
+  .animate-gradient,
+  .skeleton,
+  .aurora {
+    animation-timing-function: linear;
+    will-change: transform, opacity;
+  }
+}
+
+/* Image optimization */
+img {
+  content-visibility: auto;
+}
+
+/* Prevent layout shift from images */
+img[loading="lazy"] {
+  aspect-ratio: auto;
+}
+
+/* Contain paint for cards and grid items */
+.card {
+  contain: layout style paint;
+}
+
+/* Optimize backdrop-filter performance */
+@supports (backdrop-filter: blur(20px)) {
+  .backdrop-blur-xl, .backdrop-blur-sm, .backdrop-blur-md {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}

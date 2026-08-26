@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  # ─── Frontend ──────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      target: frontend-builder
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://backend:3001/api
+      - VITE_APP_ENV=production
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - novaa-network
+
+  # ─── Backend ───────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      target: backend-builder
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_TYPE=postgresql
+      - DATABASE_URL=postgresql://novaa:password@postgres:5432/novaa_drive
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-novaa-drive-secret-change-in-prod}
+      - FRONTEND_URL=http://localhost:3000
+      - UPLOAD_DIR=/app/backend/uploads
+    volumes:
+      - novaa-uploads:/app/backend/uploads
+      - novaa-db:/var/lib/postgresql/data
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - novaa-network
+
+  # ─── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=novaa_drive
+      - POSTGRES_USER=novaa
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    volumes:
+      - novaa-db:/var/lib/postgresql/data
+    networks:
+      - novaa-network
+
+  # ─── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - novaa-redis:/data
+    networks:
+      - novaa-network
+
+  # ─── Nginx Reverse Proxy ──────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - novaa-network
+
+volumes:
+  novaa-uploads:
+  novaa-db:
+  novaa-redis:
+
+networks:
+  novaa-network:
+    driver: bridge
