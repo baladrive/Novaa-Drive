@@ -122,7 +122,7 @@ export const requestCache = new RequestCache();
 
 // Cache key generators
 export const cacheKeys = {
-  files: (userId: string, folderId: string | null) => `files:${userId}:${folderId}`,
+  files: (userId: string, folderId: string | null, categoryFilter = "") => `files:${userId}:${folderId}:${categoryFilter}`,
   folders: (userId: string, parentId: string | null) => `folders:${userId}:${parentId}`,
   starred: (userId: string) => `starred:${userId}`,
   trashed: (userId: string) => `trashed:${userId}`,

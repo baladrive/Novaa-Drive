@@ -62,6 +62,13 @@ function revokeObjectURL(fileId: string) {
   }
 }
 
+function invalidateUserFileCaches(userId: string) {
+  requestCache.invalidatePrefix(`files:${userId}:`);
+  requestCache.invalidate(cacheKeys.trashed(userId));
+  requestCache.invalidate(cacheKeys.storage(userId));
+  requestCache.invalidate(cacheKeys.activity(userId));
+}
+
 function generateAiTags(filename: string, category: string): string[] {
   try {
     const aiEnabled = localStorage.getItem("ai_mode") !== "false";
@@ -160,70 +167,62 @@ export function getFileCategory(mimeType: string, filename: string): FileItem['f
 export const fileService = {
   // 1. Fetch non-trashed files in folder
   async getFiles(userId: string, folderId: string | null = null, categoryFilter?: string): Promise<FileItem[]> {
-    // NOTE: No caching here because blob URLs need to be fresh on each call
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction("files", "readonly");
-      const store = transaction.objectStore("files");
-      const request = store.getAll();
+    return requestCache.dedup(cacheKeys.files(userId, folderId, categoryFilter), async () => {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction("files", "readonly");
+        const store = transaction.objectStore("files");
+        const request = store.getAll();
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const allFiles: FileItem[] = request.result || [];
-        const filtered = allFiles
-          .filter(f => f.user_id === userId && !f.is_trashed)
-          .filter(f => {
-            if (categoryFilter) {
-              return f.file_category === categoryFilter;
-            }
-            return f.folder_id === folderId;
-          })
-          .map(f => {
-            const url = f.blob ? getObjectURL(f.id, f.blob) : "";
-            return {
-              ...f,
-              storage_path: url,
-              thumbnail_path: f.thumbnail_path || url
-            };
-          });
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const allFiles: FileItem[] = request.result || [];
+          const filtered = allFiles
+            .filter(f => f.user_id === userId && !f.is_trashed)
+            .filter(f => {
+              if (categoryFilter) return f.file_category === categoryFilter;
+              return f.folder_id === folderId;
+            })
+            .map(f => {
+              const url = f.blob ? getObjectURL(f.id, f.blob) : "";
+              return { ...f, storage_path: url, thumbnail_path: f.thumbnail_path || url };
+            });
 
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        resolve(filtered);
-      };
-    });
+          filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          resolve(filtered);
+        };
+      });
+    }, 15 * 1000);
   },
 
   // 2. Fetch trashed files
   async getTrashedFiles(userId: string): Promise<FileItem[]> {
-    // NOTE: No caching because blob URLs need to be fresh
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction("files", "readonly");
-      const store = transaction.objectStore("files");
-      const request = store.getAll();
+    return requestCache.dedup(cacheKeys.trashed(userId), async () => {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction("files", "readonly");
+        const store = transaction.objectStore("files");
+        const request = store.getAll();
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const allFiles: FileItem[] = request.result || [];
-        const filtered = allFiles
-          .filter(f => f.user_id === userId && f.is_trashed)
-          .map(f => {
-            const url = f.blob ? getObjectURL(f.id, f.blob) : "";
-            return {
-              ...f,
-              storage_path: url,
-              thumbnail_path: url
-            };
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const allFiles: FileItem[] = request.result || [];
+          const filtered = allFiles
+            .filter(f => f.user_id === userId && f.is_trashed)
+            .map(f => {
+              const url = f.blob ? getObjectURL(f.id, f.blob) : "";
+              return { ...f, storage_path: url, thumbnail_path: url };
+            });
+
+          filtered.sort((a, b) => {
+            const tA = a.trashed_at ? new Date(a.trashed_at).getTime() : 0;
+            const tB = b.trashed_at ? new Date(b.trashed_at).getTime() : 0;
+            return tB - tA;
           });
-
-        filtered.sort((a, b) => {
-          const tA = a.trashed_at ? new Date(a.trashed_at).getTime() : 0;
-          const tB = b.trashed_at ? new Date(b.trashed_at).getTime() : 0;
-          return tB - tA;
-        });
-        resolve(filtered);
-      };
-    });
+          resolve(filtered);
+        };
+      });
+    }, 15 * 1000);
   },
 
   // 3. Fetch starred files
@@ -465,6 +464,7 @@ export const fileService = {
           storage_path: url,
           thumbnail_path: thumbnailPath
         });
+        invalidateUserFileCaches(userId);
       };
       transaction.onerror = () => reject(transaction.error);
     });
@@ -487,6 +487,7 @@ export const fileService = {
 
       transaction.oncomplete = async () => {
         await this.addActivityLog(userId, "rename_file", `Renamed file to "${newName}"`);
+        invalidateUserFileCaches(userId);
         resolve();
       };
       transaction.onerror = () => reject(transaction.error);
@@ -509,7 +510,10 @@ export const fileService = {
         }
       };
 
-      transaction.oncomplete = () => resolve();
+      transaction.oncomplete = () => {
+        invalidateUserFileCaches(userId);
+        resolve();
+      };
       transaction.onerror = () => reject(transaction.error);
     });
   },
@@ -537,6 +541,7 @@ export const fileService = {
           isTrashed ? "trash_file" : "restore_file", 
           isTrashed ? "Moved file to trash" : "Restored file from trash"
         );
+        invalidateUserFileCaches(userId);
         resolve();
       };
       transaction.onerror = () => reject(transaction.error);
@@ -555,6 +560,7 @@ export const fileService = {
 
       transaction.oncomplete = async () => {
         await this.addActivityLog(userId, "delete_permanent", `Permanently deleted file "${file.filename}"`);
+        invalidateUserFileCaches(userId);
         resolve();
       };
       transaction.onerror = () => reject(transaction.error);

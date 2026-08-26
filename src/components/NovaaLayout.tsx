@@ -1,9 +1,9 @@
 import React, { useState, memo, useCallback } from "react";
 import NovaaHeader from "./NovaaHeader";
 import NovaaSidebar from "./NovaaSidebar";
-import ParticleBackground from "./auth/ParticleBackground";
 import { UploadCloud } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { getSiteSection, useSiteContent } from "../services/siteContent";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -46,22 +46,14 @@ const DragOverlay = memo(function DragOverlay({ isDragging }: { isDragging: bool
   );
 });
 
-// Memoized background blobs
-const BackgroundBlobs = memo(function BackgroundBlobs() {
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-float-slow rounded-full bg-purple-600/5 blur-[120px]" />
-      <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] animate-float-slower rounded-full bg-cyan-600/3 blur-[120px]" />
-    </div>
-  );
-});
-
 // Memoized footer
 const LayoutFooter = memo(function LayoutFooter() {
+  const siteContent = useSiteContent();
+  const footerContent = getSiteSection(siteContent, "footer");
   return (
     <div className="border-t border-white/[0.04] px-6 py-4 text-center">
       <p className="text-[10px] font-medium text-white/20 tracking-wider">
-        Novaa Drive <span className="mx-2">•</span> Secure <span className="mx-2">•</span> Smart <span className="mx-2">•</span> Seamless
+        {footerContent?.fields.text || "Novaa Drive • Secure • Smart • Seamless"}
       </p>
     </div>
   );
@@ -76,6 +68,8 @@ const NovaaLayout = memo(function NovaaLayout({
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const siteContent = useSiteContent();
+  const announcement = getSiteSection(siteContent, "announcement");
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -115,12 +109,6 @@ const NovaaLayout = memo(function NovaaLayout({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Particle Background */}
-      <ParticleBackground />
-
-      {/* Floating blobs */}
-      <BackgroundBlobs />
-
       {/* Drag & Drop Overlay */}
       <DragOverlay isDragging={isDragging} />
 
@@ -142,6 +130,12 @@ const NovaaLayout = memo(function NovaaLayout({
         {/* Main Content */}
         <main className="relative z-10 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            {announcement?.visible && (
+              <div className="mb-5 rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs text-amber-200">
+                {announcement.fields.message}
+                {announcement.fields.link && announcement.fields.linkText && <a className="ml-2 font-bold underline" href={announcement.fields.link}>{announcement.fields.linkText}</a>}
+              </div>
+            )}
             {children}
           </div>
           <LayoutFooter />

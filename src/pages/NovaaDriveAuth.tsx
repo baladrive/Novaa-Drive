@@ -5,17 +5,22 @@ import { useAuth } from "../context/AuthContext";
 import {
   KeyRound, Mail, User, Phone, Calendar, Eye, EyeOff,
   Shield, Upload, CheckCircle, XCircle, AlertCircle,
-  Github, Monitor, Apple, ArrowRight, Loader2
+  Github, Monitor, Apple, ArrowRight, Loader2, UserRound
 } from "lucide-react";
-import ParticleBackground from "../components/auth/ParticleBackground";
 import NovaaLogo from "../components/auth/NovaaLogo";
 import FeatureCards from "../components/auth/FeatureCards";
 import StatsSection from "../components/auth/StatsSection";
+import { getSiteSection, useSiteContent } from "../services/siteContent";
 
 export default function NovaaDriveAuth() {
   const navigate = useNavigate();
+  const siteContent = useSiteContent();
+  const heroContent = getSiteSection(siteContent, "hero");
+  const userContent = getSiteSection(siteContent, "user");
+  const footerContent = getSiteSection(siteContent, "footer");
   const {
     signIn,
+    signInAsGuest,
     signUp,
     resetPassword,
     signInWithProvider,
@@ -54,24 +59,8 @@ export default function NovaaDriveAuth() {
 
   // Animated states
   const [pageLoaded, setPageLoaded] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  const mouseGlowRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     setPageLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-      if (mouseGlowRef.current) {
-        mouseGlowRef.current.style.setProperty('--mouse-x', `${e.clientX}px`);
-        mouseGlowRef.current.style.setProperty('--mouse-y', `${e.clientY}px`);
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const evaluatePasswordStrength = (value: string) => {
@@ -163,6 +152,18 @@ export default function NovaaDriveAuth() {
     }
   };
 
+  const handleGuestSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await signInAsGuest();
+    } catch (err: any) {
+      setError(err.message || "Unable to start guest mode.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const passwordStrengthConfig = [
     { label: 'Very Weak', color: '#ef4444', width: '20%' },
     { label: 'Weak', color: '#f97316', width: '40%' },
@@ -179,24 +180,6 @@ export default function NovaaDriveAuth() {
 
   return (
     <div className="relative flex min-h-screen w-full overflow-hidden bg-[#0B1020] font-sans">
-      {/* Mouse glow follower */}
-      <div
-        ref={mouseGlowRef}
-        className="pointer-events-none fixed inset-0 z-0 opacity-30"
-        style={{
-          background: `radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(124,92,255,0.12), transparent 40%)`,
-        }}
-      />
-
-      {/* Floating blobs */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-float-slow rounded-full bg-purple-600/10 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] animate-float-slower rounded-full bg-cyan-600/8 blur-[120px]" />
-        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 animate-pulse-slow rounded-full bg-blue-600/5 blur-[100px]" />
-      </div>
-
-      <ParticleBackground />
-
       {/* Main Container */}
       <div
         className={`relative z-10 flex w-full transition-all duration-1000 ${
@@ -207,7 +190,7 @@ export default function NovaaDriveAuth() {
         <div className="hidden min-h-screen w-[45%] flex-col justify-between overflow-y-auto bg-gradient-to-br from-[#0B1020] via-[#0D1225] to-[#0F1529] p-8 lg:flex">
           <div className="space-y-6" style={{ animation: 'fadeInLeft 0.8s ease-out 0.2s both' }}>
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-purple-400/80">
-              Welcome to
+              {heroContent?.fields.eyebrow || "Welcome to"}
             </p>
             <div className="flex flex-col items-start">
               <NovaaLogo size={160} />
@@ -215,11 +198,11 @@ export default function NovaaDriveAuth() {
                 Novaa Drive
               </h1>
               <p className="mt-3 text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400">
-                Secure. Smart. Seamless.
+                {heroContent?.fields.title || "Secure. Smart. Seamless."}
               </p>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-white/50">
-              Store, manage and access your files securely from anywhere in the world with enterprise-grade cloud storage.
+              {heroContent?.fields.description || "Store, manage and access your files securely from anywhere in the world with enterprise-grade cloud storage."}
             </p>
           </div>
 
@@ -244,20 +227,20 @@ export default function NovaaDriveAuth() {
             <div className="flex flex-col items-center text-center lg:hidden">
               <NovaaLogo size={100} />
               <h2 className="mt-4 text-2xl font-black text-white">Novaa Drive</h2>
-              <p className="mt-1 text-sm text-white/40">Secure. Smart. Seamless.</p>
+              <p className="mt-1 text-sm text-white/40">{heroContent?.fields.tagline || "Secure. Smart. Seamless."}</p>
             </div>
 
             {/* Header */}
             <div className="text-center lg:text-left">
               <h2 className="text-3xl font-black tracking-tight text-white">
-                {mode === "register" ? "Create Account" : mode === "forgot" ? "Reset Password" : "Welcome Back"}
+                {mode === "register" ? "Create Account" : mode === "forgot" ? "Reset Password" : (userContent?.fields.loginTitle || "Welcome Back")}
               </h2>
               <p className="mt-2 text-sm text-white/40">
                 {mode === "register"
                   ? "Sign up to start using Novaa Drive"
                   : mode === "forgot"
                   ? "Enter your email to receive a reset link"
-                  : "Sign in to continue to Novaa Drive"}
+                  : (userContent?.fields.loginText || "Sign in to continue to Novaa Drive")}
               </p>
             </div>
 
@@ -678,13 +661,23 @@ export default function NovaaDriveAuth() {
             {!showOtp && (
               <div className="text-center">
                 {mode === "login" && (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/admin/login")}
-                    className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 py-3 text-xs font-bold text-amber-300 transition hover:border-amber-400/50 hover:bg-amber-400/10"
-                  >
-                    <Shield className="h-4 w-4" /> Admin Login
-                  </button>
+                  <div className="mb-4 grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={handleGuestSignIn}
+                      disabled={loading}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/5 py-3 text-xs font-bold text-cyan-300 transition hover:border-cyan-400/50 hover:bg-cyan-400/10 disabled:opacity-50"
+                    >
+                      <UserRound className="h-4 w-4" /> {userContent?.fields.guestText || "Continue as Guest"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/admin/login")}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 py-3 text-xs font-bold text-amber-300 transition hover:border-amber-400/50 hover:bg-amber-400/10"
+                    >
+                      <Shield className="h-4 w-4" /> Admin Login
+                    </button>
+                  </div>
                 )}
                 <button
                   type="button"
@@ -707,7 +700,7 @@ export default function NovaaDriveAuth() {
             {/* Footer */}
             <div className="text-center">
               <p className="text-xs text-white/25">
-                Your data is protected with enterprise-grade security.
+                {footerContent?.fields.text || "Your data is protected with enterprise-grade security."}
               </p>
             </div>
           </div>
@@ -732,16 +725,6 @@ export default function NovaaDriveAuth() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes float-slow {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -30px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        @keyframes float-slower {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(-40px, 40px) scale(1.2); }
-          66% { transform: translate(30px, -30px) scale(0.8); }
-        }
         @keyframes pulse-slow {
           0%, 100% { opacity: 0.5; }
           50% { opacity: 1; }
@@ -750,8 +733,6 @@ export default function NovaaDriveAuth() {
           0%, 100% { opacity: 0.6; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.05); }
         }
-        .animate-float-slow { animation: float-slow 20s ease-in-out infinite; }
-        .animate-float-slower { animation: float-slower 25s ease-in-out infinite; }
         .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
         .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
         

@@ -107,13 +107,6 @@ export default function NovaaAICard({ fileCount, loading }: AICardProps) {
         <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500 animate-gradient-shift" style={{ mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'exclude', padding: '1px' }} />
       </div>
 
-      {/* Background Glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/10 blur-[120px] animate-pulse-slow" />
-        <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-cyan-600/5 blur-[100px] animate-float-slow" />
-        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-600/5 blur-[100px] animate-float-slower" />
-      </div>
-
       <div className="relative z-10">
         {/* Top Section: Logo + Status + Title */}
         <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-start md:text-left md:gap-10">
@@ -285,16 +278,6 @@ export default function NovaaAICard({ fileCount, loading }: AICardProps) {
           0%, 100% { opacity: 0.5; }
           50% { opacity: 0.8; }
         }
-        @keyframes float-slow {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -30px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        @keyframes float-slower {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(-40px, 40px) scale(1.2); }
-          66% { transform: translate(30px, -30px) scale(0.8); }
-        }
         @keyframes scan-line {
           0% { transform: translateY(-100%); }
           100% { transform: translateY(400%); }
@@ -312,8 +295,6 @@ export default function NovaaAICard({ fileCount, loading }: AICardProps) {
         .animate-orbit-reverse-slow { animation: orbit-reverse-slow 15s linear infinite; }
         .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
         .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
-        .animate-float-slow { animation: float-slow 20s ease-in-out infinite; }
-        .animate-float-slower { animation: float-slower 25s ease-in-out infinite; }
         .animate-scan-line { animation: scan-line 2s linear infinite; }
         .animate-gradient-shift { background-size: 200% 200%; animation: gradient-shift 4s linear infinite; }
       `}</style>

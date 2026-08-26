@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useDebounce } from "../utils/optimization";
+import { getSiteSection, useSiteContent } from "../services/siteContent";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -41,6 +42,8 @@ const notifications = [
 
 const NovaaHeader = memo(function NovaaHeader({ onToggleSidebar, searchQuery, onSearchChange }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const siteContent = useSiteContent();
+  const headerContent = getSiteSection(siteContent, "header");
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -110,8 +113,7 @@ const NovaaHeader = memo(function NovaaHeader({ onToggleSidebar, searchQuery, on
                 <Cloud className="h-4 w-4 text-white" />
               </div>
             </div>
-            <span className="text-sm font-black tracking-tight text-white">Novaa</span>
-            <span className="text-sm font-black tracking-tight text-purple-400">Drive</span>
+            <span className="text-sm font-black tracking-tight text-white">{headerContent?.fields.brand || "Novaa Drive"}</span>
           </Link>
         </div>
 

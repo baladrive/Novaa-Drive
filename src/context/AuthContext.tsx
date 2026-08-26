@@ -46,6 +46,7 @@ interface AuthContextType {
   loading: boolean;
   adminLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInAsGuest: () => Promise<void>;
   signInAsAdmin: (emailOrUsername: string, password: string) => Promise<void>;
   signUp: (input: AuthSignupData) => Promise<void>;
   signOut: () => Promise<void>;
@@ -288,6 +289,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // ── Guest Sign In ─────────────────────────────────────────────────────────
+  const signInAsGuest = async () => {
+    setLoading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 120));
+      const session = {
+        id: "guest_novaa",
+        email: "guest@novaadrive.local",
+        fullName: "Guest User",
+        username: "guest",
+        phone: "",
+        isGuest: true,
+        _ts: Date.now(),
+      };
+      lsSet(SESSION_KEY, JSON.stringify(session));
+      setUser(session);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Admin Sign In ────────────────────────────────────────────────────────
   const signInAsAdmin = async (emailOrUsername: string, password: string) => {
     setAdminLoading(true);
@@ -445,6 +467,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         adminLoading,
         signIn,
+        signInAsGuest,
         signInAsAdmin,
         signUp,
         signOut,
