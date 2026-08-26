@@ -22,6 +22,10 @@ export const DEMO_USER_USERNAME = (import.meta.env.VITE_DEMO_USER_USERNAME as st
 export const DEMO_USER_FULLNAME = (import.meta.env.VITE_DEMO_USER_FULLNAME as string) || FALLBACK_IDS.fullName;
 export const DEMO_PASSWORD_HASH = (import.meta.env.VITE_DEMO_PASSWORD_HASH as string) || FALLBACK_IDS.passwordHash;
 
+export const ADMIN_EMAIL = ((import.meta.env.VITE_ADMIN_EMAIL as string) || "").trim().toLowerCase();
+export const ADMIN_USERNAME = ((import.meta.env.VITE_ADMIN_USERNAME as string) || "").trim().toLowerCase();
+export const ADMIN_PASSWORD_HASH = (import.meta.env.VITE_ADMIN_PASSWORD_HASH as string) || "";
+
 export const DEMO_USER = {
   id: DEMO_USER_ID,
   email: DEMO_USER_EMAIL,

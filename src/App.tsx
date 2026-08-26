@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import NovaaLayout from "./components/NovaaLayout";
 import NovaaDriveAuth from "./pages/NovaaDriveAuth";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { GitBranch, ExternalLink } from "lucide-react";
@@ -319,7 +321,8 @@ function DevInfoBar() {
 
 // ── Core App Content ────────────────────────────────────────────────────
 const AppContent = memo(function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, adminSession, loading, adminLoading } = useAuth();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [externalFiles, setExternalFiles] = useState<FileList | null>(null);
   const [searchParams] = useSearchParams();
@@ -339,6 +342,17 @@ const AppContent = memo(function AppContent() {
 
   if (loading) {
     return <AuthLoadingScreen />;
+  }
+
+  if (location.pathname.startsWith("/admin")) {
+    if (adminLoading) return <AuthLoadingScreen />;
+    return (
+      <Routes>
+        <Route path="/admin/login" element={adminSession ? <Navigate to="/admin/dashboard" replace /> : <AdminLogin />} />
+        <Route path="/admin/dashboard" element={adminSession ? <AdminDashboard /> : <Navigate to="/admin/login" replace />} />
+        <Route path="*" element={<Navigate to="/admin/login" replace />} />
+      </Routes>
+    );
   }
 
   const hasSharedToken = searchParams.has("token");

@@ -1,7 +1,7 @@
 /* eslint-disable react/only-export-components */
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { DEMO_USER, DEMO_USER_ID, DEMO_PASSWORD_HASH, DEMO_USER_EMAIL, DEMO_USER_FULLNAME, DEMO_USER_USERNAME, hashPassword, verifyPassword } from "../config/credentials";
+import { ADMIN_EMAIL, ADMIN_PASSWORD_HASH, ADMIN_USERNAME, DEMO_USER, DEMO_USER_ID, DEMO_PASSWORD_HASH, DEMO_USER_EMAIL, DEMO_USER_FULLNAME, DEMO_USER_USERNAME, hashPassword, verifyPassword } from "../config/credentials";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -13,6 +13,14 @@ interface AuthUser {
   username?: string;
   phone?: string;
   avatarUrl?: string;
+}
+
+interface AdminSession {
+  id: string;
+  email: string;
+  username: string;
+  role: "admin";
+  _ts: number;
 }
 
 interface AuthSignupData {
@@ -34,10 +42,14 @@ interface AuthProfileUpdate {
 
 interface AuthContextType {
   user: AuthUser | null;
+  adminSession: AdminSession | null;
   loading: boolean;
+  adminLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInAsAdmin: (emailOrUsername: string, password: string) => Promise<void>;
   signUp: (input: AuthSignupData) => Promise<void>;
   signOut: () => Promise<void>;
+  adminSignOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signInWithProvider: (provider: string) => Promise<void>;
   updateProfile: (profile: AuthProfileUpdate) => Promise<void>;
@@ -50,6 +62,7 @@ interface AuthContextType {
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 const SESSION_KEY = import.meta.env.VITE_SESSION_KEY as string || "novaa_session";
+const ADMIN_SESSION_KEY = "novaa_admin_session";
 const USERS_KEY = "novaa_users";
 const DEMO_HASH_KEY = "novaa_demo_hash";
 const SESSION_TIMEOUT_MS = parseInt(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES || "1440") * 60 * 1000; // 24h default
@@ -153,7 +166,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(true);
   const [isAiMode, setIsAiMode] = useState<boolean>(() => {
     return lsGet("ai_mode") !== "false";
   });
@@ -187,10 +202,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             lsRemove(SESSION_KEY);
           }
         }
+
+        const rawAdmin = lsGet(ADMIN_SESSION_KEY);
+        if (rawAdmin) {
+          const session = JSON.parse(rawAdmin) as AdminSession;
+          const age = Date.now() - (session._ts || 0);
+          if (session.role === "admin" && age < SESSION_TIMEOUT_MS) {
+            session._ts = Date.now();
+            lsSet(ADMIN_SESSION_KEY, JSON.stringify(session));
+            setAdminSession(session);
+          } else {
+            lsRemove(ADMIN_SESSION_KEY);
+          }
+        }
       } catch (e) {
         console.error("Auth boot failed:", e);
       } finally {
         setLoading(false);
+        setAdminLoading(false);
       }
     })();
   }, []);
@@ -256,6 +285,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Admin Sign In ────────────────────────────────────────────────────────
+  const signInAsAdmin = async (emailOrUsername: string, password: string) => {
+    setAdminLoading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 200));
+      const rlKey = `admin:${emailOrUsername.trim().toLowerCase()}`;
+      const rl = getRateLimit(rlKey);
+
+      if (rl.lockedUntil > Date.now()) {
+        const mins = Math.ceil((rl.lockedUntil - Date.now()) / 60000);
+        throw new Error(`Too many failed attempts. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.`);
+      }
+
+      const identifier = emailOrUsername.trim().toLowerCase();
+      const identityMatches = Boolean(ADMIN_PASSWORD_HASH) &&
+        (identifier === ADMIN_EMAIL || identifier === ADMIN_USERNAME);
+      const passwordOk = identityMatches && await verifyPassword(password, ADMIN_PASSWORD_HASH);
+
+      if (!passwordOk) {
+        const attempts = rl.attempts + 1;
+        const lockedUntil = attempts >= MAX_ATTEMPTS ? Date.now() + LOCKOUT_MS : 0;
+        setRateLimit(rlKey, { attempts, lockedUntil });
+        const remaining = MAX_ATTEMPTS - attempts;
+        if (remaining <= 0) throw new Error(`Admin access locked for ${LOCKOUT_MS / 60000} minutes.`);
+        throw new Error(`Invalid administrator credentials. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining.`);
+      }
+
+      clearRateLimit(rlKey);
+      const session: AdminSession = {
+        id: "admin_novaa",
+        email: ADMIN_EMAIL || identifier,
+        username: ADMIN_USERNAME || identifier,
+        role: "admin",
+        _ts: Date.now(),
+      };
+      lsSet(ADMIN_SESSION_KEY, JSON.stringify(session));
+      setAdminSession(session);
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -356,14 +427,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const adminSignOut = async () => {
+    setAdminLoading(true);
+    try {
+      lsRemove(ADMIN_SESSION_KEY);
+      setAdminSession(null);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        adminSession,
         loading,
+        adminLoading,
         signIn,
+        signInAsAdmin,
         signUp,
         signOut,
+        adminSignOut,
         resetPassword,
         signInWithProvider,
         updateProfile,

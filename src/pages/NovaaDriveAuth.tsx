@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   KeyRound, Mail, User, Phone, Calendar, Eye, EyeOff,
@@ -12,6 +13,7 @@ import FeatureCards from "../components/auth/FeatureCards";
 import StatsSection from "../components/auth/StatsSection";
 
 export default function NovaaDriveAuth() {
+  const navigate = useNavigate();
   const {
     signIn,
     signUp,
@@ -675,6 +677,15 @@ export default function NovaaDriveAuth() {
             {/* Toggle Mode */}
             {!showOtp && (
               <div className="text-center">
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/admin/login")}
+                    className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 py-3 text-xs font-bold text-amber-300 transition hover:border-amber-400/50 hover:bg-amber-400/10"
+                  >
+                    <Shield className="h-4 w-4" /> Admin Login
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
